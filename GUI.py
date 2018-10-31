@@ -210,7 +210,7 @@ class Cut(tk.Frame):
             image = ImageTk.PhotoImage(image)
            
 
-            self.canvas.create_image(0, 0,image=image, anchor= "nw")
+            self.canvas.create_image(self.canvas.winfo_width()/ 2, self.canvas.winfo_height()/2,image=image)
             self.canvas.pack(fill=X)
 
             if self.panelA is None: 
@@ -372,7 +372,7 @@ class App(tk.Frame):
             image = ImageTk.PhotoImage(image)
            
 
-            self.canvas.create_image(400, 200,image=image)
+            self.canvas.create_image(self.canvas.winfo_width()/ 2, self.canvas.winfo_height()/2,image=image)
             self.canvas.pack(fill=X)
 
             if self.panelA is None: 
