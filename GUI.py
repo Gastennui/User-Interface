@@ -1,6 +1,6 @@
 
-import Tkinter as tk     # python 2
-import tkFont as tkfont  # python 2
+import Tkinter as tk    
+import tkFont as tkfont  
 
 
 from Tkinter import *
@@ -84,15 +84,16 @@ class Cut(tk.Frame):
 		self.globalIm = None
 		self.imageName = None
 		self.filecount = 0
-		self.check = 0
+		self.image = None
+
 		
 		
-		#csv = self.openCSV() #NEED TO FIND WAY TO NAME IMAGES CONSEC
+		
 
 	def fileName(self, name): #save filename as variable
 		self.n = self.imageName
 		
-		self.last.destroy()
+		last.destroy()
 		
 		self.writeData()
 
@@ -101,7 +102,7 @@ class Cut(tk.Frame):
 	  
 	  	self.n = self.imageName
 		
-		self.last.destroy()
+		last.destroy()
 		
 		self.writeData()
 		
@@ -109,13 +110,15 @@ class Cut(tk.Frame):
 		last.update()
 
 
-		
+
+
 	def openCSV(self): #open csv
 		csvFile = "cutImage" + str(self.filecount) + ".csv"
-		self.filew= open(csvFile, "wb")
+		self.filew= open(csvFile, "wb+")
 		self.writer = csv.writer(self.filew, quoting = csv.QUOTE_ALL)
 		self.writer.writerow(['SheetName', 'x_st', 'x_end', 'y_st', 'y_end'])
 		self.filecount +=1
+
 
 
 	def writeData(self):
@@ -131,7 +134,7 @@ class Cut(tk.Frame):
 			   
 		btn2 = Button(self, text = "Save & Exit to Main Screen", command  = lambda: self.exitProgram()).pack(side ="bottom", fill = "both", expand = "yes")
 	   	btn = Button(self, text = "Select an Image", command = self.select_image).pack(side = "bottom", fill = "both", expand = "yes", padx = "10", pady="10")
-		
+		btn3=Button(self, text = "Clear all rectangles", command = self.goTo).pack(side = "bottom", fill = "both", expand = "yes", padx = "10", pady="10")
 		
 		self.canvas = Canvas(self, width = 650, height = 800, bg = "white") #too large. Need entire bg to be image
 		self.canvas.pack()
@@ -167,8 +170,38 @@ class Cut(tk.Frame):
 		self.rectxend = self.canvas.canvasx(event.x)
 		self.rectyend = self.canvas.canvasy(event.y)
 		self.canvas.coords(self.rectid, self.rectxstart, self.rectystart, self.rectxend, self.rectyend)
-		check = self.keep_rect()
+	
+		check = self.createList()
+		imName = self.getimagename()
 		
+	def goTo(self):
+		if self.count != 0:
+			self.clearFile()
+
+	def clearFile(self):
+		
+		self.filew.close()
+		self.count = 0
+		self.filecount = 0
+		self.openCSV()
+		self.canvas.delete("all")
+
+		im =self.image
+		basewidth = 650
+		wpercent = (basewidth/float(im.size[0]))
+		hsize = int((float(im.size[1]) *float(wpercent)))
+		im = im.resize((basewidth, hsize), Image.ANTIALIAS)
+		
+		im = ImageTk.PhotoImage(im)
+
+		self.canvas.create_image(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, image=im)
+		self.canvas.pack(fill=X)
+
+		self.panelA.configure(image = im) #configure if not empty
+		self.panelA.image = im
+
+		
+
 	def createList(self):
 		imList = (self.rectxstart, self.rectystart, self.rectxend, self.rectyend)
 
@@ -176,29 +209,17 @@ class Cut(tk.Frame):
 
 
 
-	def keep_rect(self): #keep or destroy rectangle drawn
-		
-		MsgBox= tkMessageBox.askquestion('Rectangle created', 'Keep rectangle?', icon = None)
-	  
-		if MsgBox == 'no':
-			
-			self.canvas.delete(self.rectid, self.rectxstart, self.rectystart, self.rectxend, self.rectyend)
-		if MsgBox == 'yes':
-			
-			lab = self.createList()
-			self.getimagename()
-
 	def select_image(self): #popup dialog to select image, wipe canvas
 		global panelA # original image
 		
 		if self.filecount > 0:
 			self.filew.close()
 
-		csv = self.openCSV() #NEED TO FIND WAY TO NAME IMAGES CONSEC
+		csv = self.openCSV() 
 
 		self.canvas.delete("all")
 
-		path = tkFileDialog.askopenfilename() #file chooser dialog
+		path = tkFileDialog.askopenfilename() #file chooser d
 
 		if len(path) > 0: #check to make sure we selected a file
 			image = cv2.imread(path) #edge detector
@@ -207,28 +228,28 @@ class Cut(tk.Frame):
 
 			image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # change to proper channel to view in Tkinter
 
-			image = Image.fromarray(image)
-			
+			self.image = Image.fromarray(image)
+			im = self.image
 			basewidth = 650
-			wpercent = (basewidth/float(image.size[0]))
-			hsize = int((float(image.size[1]) *float(wpercent)))
-			image = image.resize((basewidth, hsize), Image.ANTIALIAS)
-			self.globalIm = image
+			wpercent = (basewidth/float(im.size[0]))
+			hsize = int((float(im.size[1]) *float(wpercent)))
+			im = im.resize((basewidth, hsize), Image.ANTIALIAS)
+			self.globalIm = im
 
-			image = ImageTk.PhotoImage(image)
+			im = ImageTk.PhotoImage(im)
 		   
 
-			self.canvas.create_image(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, image=image)
+			self.canvas.create_image(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, image=im)
 			self.canvas.pack(fill=X)
 
 			if self.panelA is None: 
-				self.panelA = Label(image=image) # create label for image
-				self.panelA.image = image #stops image from being garbage collected
+				self.panelA = Label(image=im) # create label for image
+				self.panelA.image = im #stops image from being garbage collected
 				
 
 			else:
-				self.panelA.configure(image = image) #configure if not empty
-				self.panelA.image = image #update reference
+				self.panelA.configure(image = im) #configure if not empty
+				self.panelA.image = im #update reference
 	
 
 	def CutDown(self, imList):
@@ -238,6 +259,9 @@ class Cut(tk.Frame):
 		self.imageName = "cutImage" + str(self.count) + ".jpg"
 		CutImage.save(self.imageName)
 		self.count +=1
+		
+
+		
 
 class App(tk.Frame):
 
@@ -251,21 +275,21 @@ class App(tk.Frame):
    
 	def _createVariables(self, parent): #initialize class variables
 		self.parent = parent
-		self.rectxstart = 0 #x0
-		self.rectystart = 0 #y0
-		self.rectxend = 0 #x1
-		self.rectyend = 0 #Y1
+		self.rectxstart = 0 
+		self.rectystart = 0 
+		self.rectxend = 0 
+		self.rectyend = 0 
 		self.rectid = None
 		self.move = False
 		self.image = None
 		self.n = ''
 		self.val = 0
 		self.panelA= None
-		self.imageName = None
 		self.count = 0
 		self.path = None
-	   
+		self.im = None
 		
+	   	
 		csv = self.openCSV()
 
 	def fileName(self, name): #save filename as variable
@@ -276,20 +300,13 @@ class App(tk.Frame):
 
 	def getimagename(self): #get the image name to save in csv
 		last = self.last = Toplevel(self)
-	  	
-		#name = Entry(last)
-		#name.pack()
-
-		#lab = Label(last, text = "Enter image name: ")
-		#lab.pack()
-		self.imageName = self.count
 
 		self.n = self.path
 		
 		self.last.destroy()
 		self.writeData()
 		
-		self.count +=1
+		
 
 		last.update()
 		
@@ -297,10 +314,11 @@ class App(tk.Frame):
 		self.filew= open('dataLabels.csv', "wb")
 		self.writer = csv.writer(self.filew, quoting = csv.QUOTE_ALL)
 		self.writer.writerow(['image', 'x_st', 'x_end', 'y_st', 'y_end', 'val', 'single_dig', 'final_answer', 'carried', 'nonsense', 'neither', 'correct', 'incorrect'])
+		self.count +=1
 
 	def writeData(self):
 
-		self.writer.writerow([self.n, self.rectxstart,  self.rectxend,  self.rectystart,self.rectyend,  self.val,  self.nxt.dig.get(),  self.nxt.fullNum.get(), self.nxt.carry.get(),self.nxt.nonesense.get(),  self.nxt.neither.get(),  self.nxt.correct.get(),  self.nxt.incorrect.get() ])
+		self.writer.writerow([self.n, self.rectxstart,  self.rectxend,  self.rectystart,self.rectyend,  self.val,  self.nxt.dig,  self.nxt.fullNum.get(), self.nxt.carry.get(),self.nxt.nonesense.get(),  self.nxt.neither.get(),  self.nxt.correct.get(),  self.nxt.incorrect.get() ])
 
 	def exitProgram(self): #end program close csv
 		self.filew.close()
@@ -312,9 +330,9 @@ class App(tk.Frame):
 	   
 		btn2 = Button(self, text = "Save & Exit to Main Screen", command  = lambda: self.exitProgram()).pack(side ="bottom", fill = "both", expand = "yes")
 	   
-		btn = Button(self, text = "Select an Image", command = self.select_image)
-		btn.pack(side = "bottom", fill = "both", expand = "yes", padx = "10", pady="10")
+		btn = Button(self, text = "Select an Image", command = self.select_image).pack(side = "bottom", fill = "both", expand = "yes", padx = "10", pady="10")
 
+		btn3=Button(self, text = "Clear all rectangles", command = self.goTo).pack(side = "bottom", fill = "both", expand = "yes", padx = "10", pady="10")
 
 		
 		self.canvas = Canvas(self, width = 650, height = 800, bg = "white") #too large. Need entire bg to be image
@@ -352,19 +370,11 @@ class App(tk.Frame):
 		self.rectxend = self.canvas.canvasx(event.x)
 		self.rectyend = self.canvas.canvasy(event.y)
 		self.canvas.coords(self.rectid, self.rectxstart, self.rectystart, self.rectxend, self.rectyend)
-		check = self.keep_rect()
-
-	def keep_rect(self): #keep or destroy rectangle drawn
 		
-		MsgBox= tkMessageBox.askquestion('Rectangle created', 'Keep rectangle?', icon = None)
-	  
-		if MsgBox == 'no':
-			
-			self.canvas.delete(self.rectid, self.rectxstart, self.rectystart, self.rectxend, self.rectyend)
-		if MsgBox == 'yes':
-			
-			lab = self.lbl() # change so that this just calls a function that records each rectangle, then pass rectangle and crop
+		check = self.lbl()
+		
 
+	
 	def select_image(self): #popup dialog to select image, wipe canvas
 		global panelA # original image
 
@@ -379,7 +389,8 @@ class App(tk.Frame):
 
 			image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # change to proper channel to view in Tkinter
 
-			image = Image.fromarray(image)
+			self.im = Image.fromarray(image)
+			image = self.im
 
 			basewidth = 300
 			wpercent = (basewidth/float(image.size[0]))
@@ -429,7 +440,8 @@ class App(tk.Frame):
 		self.getimagename()
 	def checklist(self): #create checklist
 		
-		nxt = self.nxt = Toplevel(self)
+		nxt=self.nxt = Toplevel(self)
+		
 
 		nxt.dig = IntVar() #single digit (can also be full num, correct, incorrect)
 		nxt.fullNum = IntVar() #final answer (can also be dig, correct, incorrect)
@@ -452,7 +464,32 @@ class App(tk.Frame):
 		Checkbutton(nxt, text = 'Neither Correct Nor Incorrect', variable = nxt.neither).pack()
 
 		Button(nxt, text = 'Save', command = lambda: self.chckstate()).pack()
+	def goTo(self):
+		if self.count != 0:
+			self.clearFile()
 
+	def clearFile(self):
+		
+		self.filew.close()
+		self.count = 0
+		self.openCSV()
+		self.canvas.delete("all")
+
+		im =self.im
+		basewidth = 300
+		wpercent = (basewidth/float(im.size[0]))
+		hsize = int((float(im.size[1]) *float(wpercent)))
+		im = im.resize((basewidth, hsize), Image.ANTIALIAS)
+		
+		im = ImageTk.PhotoImage(im)
+
+		self.canvas.create_image(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, image=im)
+		self.canvas.pack(fill=X)
+
+		self.panelA.configure(image = im) #configure if not empty
+		self.panelA.image = im
+
+		self.count = 0
 if __name__ == "__main__":
 	app = FrontPage()
 	app.mainloop()
