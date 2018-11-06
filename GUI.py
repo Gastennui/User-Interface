@@ -39,9 +39,13 @@ class FrontPage(tk.Tk):
 		self.show_frame("StartPage")
 
 	def show_frame(self, page_name):
-
+		
 		frame = self.frames[page_name]
+
 		frame.tkraise()
+
+	def quit(self):
+		self.destroy()
 
 
 class StartPage(tk.Frame): #not working correctly after exiting to main screen from cut or box
@@ -56,7 +60,7 @@ class StartPage(tk.Frame): #not working correctly after exiting to main screen f
 							command=lambda: controller.show_frame("Cut")).pack()
 		button2 = tk.Button(self, text="Label a Single Problem",
 							command=lambda: controller.show_frame("App")).pack()
-	
+		button3 = tk.Button(self, text = "Exit Program", command = lambda: controller.quit()).pack()
 
 
 class Cut(tk.Frame):
@@ -70,10 +74,10 @@ class Cut(tk.Frame):
 
 	def _createVariables(self, parent): #initialize class variables
 		self.parent = parent
-		self.rectxstart = 0 #x0
-		self.rectystart = 0 #y0
-		self.rectxend = 0 #x1
-		self.rectyend = 0 #Y1
+		self.rectxstart = 0 
+		self.rectystart = 0 
+		self.rectxend = 0 
+		self.rectyend = 0 
 		self.rectid = None
 		self.move = False
 		self.image = None
@@ -127,8 +131,8 @@ class Cut(tk.Frame):
 
 	def exitProgram(self): #end program close csv
 		self.filew.close()
-
-		self.destroy()
+		self.canvas.delete("all")
+		self.lower()
 
 	def _createCanvas(self): #create a canvas
 			   
@@ -322,8 +326,8 @@ class App(tk.Frame):
 
 	def exitProgram(self): #end program close csv
 		self.filew.close()
-
-		self.destroy()
+		self.canvas.delete("all")
+		self.lower()
 
 	def _createCanvas(self): #create a canvas
 		
