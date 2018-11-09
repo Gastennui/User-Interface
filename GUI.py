@@ -74,10 +74,10 @@ class Cut(tk.Frame):
 
 	def _createVariables(self, parent): #initialize class variables
 		self.parent = parent
-		self.rectxstart = 0 
-		self.rectystart = 0 
-		self.rectxend = 0 
-		self.rectyend = 0 
+		self.rectxstart = 0 #x0
+		self.rectystart = 0 #y0
+		self.rectxend = 0 #x1
+		self.rectyend = 0 #Y1
 		self.rectid = None
 		self.move = False
 		self.image = None
@@ -178,6 +178,12 @@ class Cut(tk.Frame):
 		check = self.createList()
 		imName = self.getimagename()
 		
+
+	def createList(self):
+		imList = (self.rectxstart, self.rectystart, self.rectxend, self.rectyend)
+
+		self.CutDown(imList)
+
 	def goTo(self):
 		if self.count != 0:
 			self.clearFile()
@@ -206,24 +212,17 @@ class Cut(tk.Frame):
 
 		
 
-	def createList(self):
-		imList = (self.rectxstart, self.rectystart, self.rectxend, self.rectyend)
-
-		self.CutDown(imList)
 
 
 
 	def select_image(self): #popup dialog to select image, wipe canvas
 		global panelA # original image
-		
-		if self.filecount > 0:
-			self.filew.close()
-
-		csv = self.openCSV() 
 
 		self.canvas.delete("all")
 
-		path = tkFileDialog.askopenfilename() #file chooser d
+		csv = self.openCSV()
+
+		path = tkFileDialog.askopenfilename() #file chooser dialog
 
 		if len(path) > 0: #check to make sure we selected a file
 			image = cv2.imread(path) #edge detector
@@ -232,28 +231,29 @@ class Cut(tk.Frame):
 
 			image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # change to proper channel to view in Tkinter
 
-			self.image = Image.fromarray(image)
-			im = self.image
+			image = Image.fromarray(image)
+			
 			basewidth = 650
-			wpercent = (basewidth/float(im.size[0]))
-			hsize = int((float(im.size[1]) *float(wpercent)))
-			im = im.resize((basewidth, hsize), Image.ANTIALIAS)
-			self.globalIm = im
+			wpercent = (basewidth/float(image.size[0]))
+			hsize = int((float(image.size[1]) *float(wpercent)))
+			image = image.resize((basewidth, hsize), Image.ANTIALIAS)
+			self.globalIm = image
 
-			im = ImageTk.PhotoImage(im)
+			image = ImageTk.PhotoImage(image)
 		   
 
-			self.canvas.create_image(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, image=im)
+			self.canvas.create_image(0, 0,image=image, anchor= "nw")
 			self.canvas.pack(fill=X)
 
 			if self.panelA is None: 
-				self.panelA = Label(image=im) # create label for image
-				self.panelA.image = im #stops image from being garbage collected
+				self.panelA = Label(image=image) # create label for image
+				self.panelA.image = image #stops image from being garbage collected
 				
 
 			else:
-				self.panelA.configure(image = im) #configure if not empty
-				self.panelA.image = im #update reference
+				self.panelA.configure(image = image) #configure if not empty
+				self.panelA.image = image #update reference
+	
 	
 
 	def CutDown(self, imList):
