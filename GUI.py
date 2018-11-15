@@ -13,6 +13,7 @@ import tkFileDialog
 import tkMessageBox
 import cv2
 import csv
+import os
 
 class FrontPage(tk.Tk):
 
@@ -89,6 +90,7 @@ class Cut(tk.Frame):
 		self.imageName = None
 		self.filecount = 0
 		self.image = None
+		self.MainSheet = None
 
 		
 		
@@ -220,11 +222,16 @@ class Cut(tk.Frame):
 
 		self.canvas.delete("all")
 
+
 		csv = self.openCSV()
 
 		path = tkFileDialog.askopenfilename() #file chooser dialog
 
 		if len(path) > 0: #check to make sure we selected a file
+			
+			extenstionFilename = os.path.basename(path)
+			self.MainSheet, fileExt = os.path.splitext(extenstionFilename)
+
 			image = cv2.imread(path) #edge detector
 			gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 			
@@ -260,7 +267,7 @@ class Cut(tk.Frame):
 
 		copyIm = self.globalIm
 		CutImage = copyIm.crop(imList)
-		self.imageName = "cutImage" + str(self.count) + ".jpg"
+		self.imageName = str(self.MainSheet) + str(self.count) + ".jpg"
 		CutImage.save(self.imageName)
 		self.count +=1
 		
