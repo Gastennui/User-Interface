@@ -299,37 +299,26 @@ class App(tk.Frame):
 		self.count = 0
 		self.path = None
 		self.im = None
-		
+		self.numType = None
+		self.MainSheet = None
+		self.moveOn = 0
+		self.correct = 1
+		self.filecount = 0
 	   	
-		csv = self.openCSV()
-
-	def fileName(self, name): #save filename as variable
-		self.n = name.get()
-		
-		self.last.destroy()
-		self.writeData()
-
-	def getimagename(self): #get the image name to save in csv
-		last = self.last = Toplevel(self)
-
-		self.n = self.path
-		
-		self.last.destroy()
-		self.writeData()
-		
 		
 
-		last.update()
 		
 	def openCSV(self): #open csv
-		self.filew= open('dataLabels.csv', "wb")
+		self.filecount +=1
+		filename = str('datalabel_') + str(self.filecount) + str('.csv')
+		self.filew= open(filename, "wb")
 		self.writer = csv.writer(self.filew, quoting = csv.QUOTE_ALL)
-		self.writer.writerow(['image', 'x_st', 'x_end', 'y_st', 'y_end', 'val', 'single_dig', 'final_answer', 'carried', 'nonsense', 'neither', 'correct', 'incorrect'])
+		self.writer.writerow(['image', 'x_st', 'x_end', 'y_st', 'y_end', 'val', 'correct?', 'Val_Type'])
 		self.count +=1
 
 	def writeData(self):
 
-		self.writer.writerow([self.n, self.rectxstart,  self.rectxend,  self.rectystart,self.rectyend,  self.val,  self.nxt.dig,  self.nxt.fullNum.get(), self.nxt.carry.get(),self.nxt.nonesense.get(),  self.nxt.neither.get(),  self.nxt.correct.get(),  self.nxt.incorrect.get() ])
+		self.writer.writerow([self.MainSheet, self.rectxstart,  self.rectxend,  self.rectystart,self.rectyend,  self.val, self.correct, self.numType])
 
 	def exitProgram(self): #end program close csv
 		self.filew.close()
@@ -382,7 +371,7 @@ class App(tk.Frame):
 		self.rectyend = self.canvas.canvasy(event.y)
 		self.canvas.coords(self.rectid, self.rectxstart, self.rectystart, self.rectxend, self.rectyend)
 		
-		check = self.lbl()
+		#check = self.lbl() # need this to happen after image load
 		
 
 	
@@ -393,7 +382,12 @@ class App(tk.Frame):
 
 		self.path = tkFileDialog.askopenfilename() #file chooser dialog
 
+		csv = self.openCSV()
+
 		if len(self.path) > 0: #check to make sure we selected a file
+			self.MainSheet = os.path.basename(self.path)
+			#self.MainSheet, fileExt = os.path.splitext(extenstionFilename)
+
 			image = cv2.imread(self.path) #edge detector
 			gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 			
@@ -423,17 +417,27 @@ class App(tk.Frame):
 				self.panelA.configure(image = image) #configure if not empty
 				self.panelA.image = image #update reference
 
-	def getnum( self, info): #return value from message box
+		
+		message = "Segment the first term "
+		self.numType = "First Term"
+		self.moveOn = 1
+		self.firstTerm(message, self.numType)
+
+	def getnum( self, info, message, numType): #return value from message box
 		self.val = info.get()
 	
 		self.top.destroy()
 
-		chk = self.checklist()
+		self.moveOn +=1
 
-	def lbl(self): # label data
+		exist = self.chckstate(message, numType)
+	
 		
+
+	def lbl(self, message, numType): # label data
+		self.nxt.destroy()
 		top = self.top = Toplevel(self)
-		btn = Button(top, text = "Confirm", command = lambda: self.getnum(info))
+		btn = Button(top, text = "Confirm", command = lambda: self.getnum(info, message, numType))
 		btn.pack(side= "bottom")
 
 		info = Entry(top)
@@ -443,38 +447,127 @@ class App(tk.Frame):
 		lab.pack()
 
 		top.update() # or withdraw
-
-	def chckstate(self): #destroy toplevel
 		
+
+		self.writeData()
+		
+
+	def chckstate(self, message, numType): #destroy toplevel
+		
+		nxt = self.nxt = Toplevel(self)
+
+		msg = Message(nxt, text = "This value is: ")
+		msg.pack()
+
+		button = Button(nxt, text = "Correct", command = lambda: self.correctness(1, message, numType)).pack()
+		button2 = Button(nxt, text = "Incorrect", command = lambda: self.correctness(0, message, numType)).pack()
+
+
+
+	def correctness(self, correctness, message, numType):
+		self.correct = correctness
 		self.nxt.destroy()
+		self.Close_Open(message, numType)
+
+	def firstTerm(self, message, numType):
+		nxt = self.nxt = Toplevel(self)
 		
-		self.getimagename()
-	def checklist(self): #create checklist
-		
-		nxt=self.nxt = Toplevel(self)
-		
+		msg = Message(nxt, text = message)
+		msg.pack()
 
-		nxt.dig = IntVar() #single digit (can also be full num, correct, incorrect)
-		nxt.fullNum = IntVar() #final answer (can also be dig, correct, incorrect)
-		nxt.carry = IntVar() #carried  (can also be correct, incorrect)
-		nxt.correct = IntVar() #correctly done (can also be dig, full num, carry)
-		nxt.incorrect = IntVar() #incorrectly done (can also be dig, full num, carry)
-		nxt.nonesense = IntVar()
-		nxt.neither = IntVar()
+		nxt.type = numType
+
+		button = Button(nxt, text = "The box was drawn correctly", command = lambda: self.lbl(message, numType)).pack() #lbl needs to call close open
+		button2 = Button(nxt, text = "This value does not exist", command = lambda: self.doesNotExist(message, numType)).pack()
+		button3 = Button(nxt, text = "This rectangle is drawn incorrectly" , command = lambda: self.eraseRect()).pack()
 
 
-		lab=Label(nxt, text = "This value is: ")
-		lab.pack()
+	def eraseRect(self):
+		self.canvas.delete(self.rectid, self.rectxstart, self.rectystart, self.rectxend, self.rectyend)
 
-		Checkbutton(nxt, text = 'Single Digit', variable = nxt.dig).pack()
-		Checkbutton(nxt, text = 'Final Answer', variable = nxt.fullNum).pack()
-		Checkbutton(nxt, text = 'Carried Number', variable = nxt.carry).pack()
-		Checkbutton(nxt, text = 'Nonsense', variable = nxt.nonesense).pack()        
-		Checkbutton(nxt, text = 'Correct', variable = nxt.correct).pack()
-		Checkbutton(nxt, text = 'Incorrect', variable = nxt.incorrect).pack()
-		Checkbutton(nxt, text = 'Neither Correct Nor Incorrect', variable = nxt.neither).pack()
 
-		Button(nxt, text = 'Save', command = lambda: self.chckstate()).pack()
+	def doesNotExist(self, message, numType):
+		self.moveOn +=1
+		self.Close_Open(message, numType)
+
+	def Close_Open(self, message, numType):
+		self.nxt.destroy() #not 
+		self.GenerateMess(message, numType)
+
+
+	def GenerateMess(self, message, numType):
+		if self.moveOn ==2:
+
+			message = "Segment the first digit in the first term" #need to be able to input 2 rectangles
+			self.numType = "First Segmented First Term"
+
+			self.firstTerm(message, numType)
+			self.nxt.destroy
+
+		if self.moveOn ==3:
+			message = "Segment the second digit in the first term"
+			self.numType = "Second Segmented Second Term"
+
+			self.firstTerm(message, numType)
+			self.nxt.destroy
+
+		if self.moveOn ==4:
+			message = "Segment the first carried number"
+			self.numType = "First Carry"
+
+			self.firstTerm(message, numType)
+			self.nxt.destroy
+
+		if self.moveOn ==5:
+			message = "Segment the second term"
+			self.numType = "Second Term"
+
+			self.firstTerm(message, numType)
+			self.nxt.destroy
+
+		if self.moveOn ==6:
+			message = "Segment the first digit in the second term"
+			self.numType = "First Segmented Second Term"
+
+			self.firstTerm(message, numType)
+			self.nxt.destroy
+
+		if self.moveOn ==7:
+			message = "Segment the second digit in the second term"
+			self.numType = "Second Segmented Second Term"
+
+			self.firstTerm(message, numType)
+			self.nxt.destroy
+
+		if self.moveOn ==8:
+			message = "Segment the second carried digit"
+			self.numType = "Second Carry"
+
+			self.firstTerm(message, numType)
+			self.nxt.destroy
+
+		if self.moveOn ==9:
+			message = "Segment the answer"
+			self.numType = "Answer"
+			
+			self.firstTerm(message, numType)
+			self.nxt.destroy
+
+		if self.moveOn ==10:
+			message = "Segment the first digit in the answer "
+			self.numType = "Answer digit 1" 
+
+			self.firstTerm(message, numType)
+			self.nxt.destroy
+
+		if self.moveOn ==11:
+			message = "Segment the second digit in the answer "
+			self.numType = "Answer digit 2" 
+
+			self.firstTerm(message, numType)
+			self.nxt.destroy
+
+
 	def goTo(self):
 		if self.count != 0:
 			self.clearFile()
